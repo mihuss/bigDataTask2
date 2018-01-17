@@ -64,7 +64,7 @@ server <- function(input, output) {
   
   output$coolplot <- renderPlot({
     print(filteredBiz())
-    ggplot(filteredBiz(), aes(filteredBiz()$Year)) + geom_histogram() 
+    ggplot(filteredBiz(), aes(filteredBiz()$Year)) + geom_histogram(binwidth = 0.5) + geom_freqpoly(binwidth = 1, alpha = 0.5 ) 
   })
 }
 
