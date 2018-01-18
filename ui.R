@@ -57,6 +57,22 @@ navbarPage(
   
   tabPanel(
     "Data explorer",
-    plotOutput("scatterStarsReviewCount", height = 250)
+    h3('bla'),
+    #verbatimTextOutput("visitsAvailable"),
+    plotOutput("scatterStarsReviewCount", height = 250),
+    selectInput(
+      "selectedDay",
+      "Select Day:",
+      c(
+        "Monday" = "Monday",
+        "Tuesday" = "Tuesday",
+        "Wednesday" = "Wednesday",
+        "Thursday" = "Thursday",
+        "Friday" = "Friday",
+        "Saturday" = "Saturday",
+        "Sunday" = "Sunday"
+      )
+    ),
+    plotOutput("visitsPerDay", height = 250)
   )
 )

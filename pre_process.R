@@ -9,7 +9,7 @@ library(leaflet)
 library(maps)
 #
 # Read the businesses json file
-json_file<-"yelp_academic_dataset_business_small.json"
+json_file<-"yelp_academic_dataset_business.json"
 biz_dat<-fromJSON(sprintf("[%s]", paste(readLines(json_file), collapse=",")))
 
 #biz_dat
