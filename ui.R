@@ -76,7 +76,7 @@ navbarPage(
                    "Sunday" = "Sunday"
                  )
                ),
-               plotOutput("visitsPerDay", height = 250, width = 400)
+               plotOutput("visitsPerDay", height = 600, width = 500)
              ),
              
              column(
@@ -89,7 +89,7 @@ navbarPage(
                  max = 5,
                  value = c(4, 5)
                ),
-               plotOutput("reviewsPerYear", height = 250, width = 400)
+               plotOutput("reviewsPerYear", height = 500, width = 500)
              )
            ))
 )

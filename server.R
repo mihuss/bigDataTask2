@@ -7,15 +7,15 @@ library(jsonlite)
 
 # Read pre-processed data
 #
-bizrates <- read.table("bizrates.dat", stringsAsFactors = FALSE, colClasses=c("biz_rest.review_count"="numeric"))
+bizrates <- read.table("data/bizrates.dat", stringsAsFactors = FALSE, colClasses=c("biz_rest.review_count"="numeric"))
 
-reviewsA <- read.table("reviewA.dat", stringsAsFactors = FALSE)
-reviewsB <- read.table("reviewB.dat", stringsAsFactors = FALSE)
-reviewsC <- read.table("reviewC.dat", stringsAsFactors = FALSE)
+reviewsA <- read.table("data/reviewA.dat", stringsAsFactors = FALSE)
+reviewsB <- read.table("data/reviewB.dat", stringsAsFactors = FALSE)
+reviewsC <- read.table("data/reviewC.dat", stringsAsFactors = FALSE)
 
 reviewsTable <- rbind(reviewsA, reviewsB, reviewsC)
 
-json_file <- "checkin.json"
+json_file <- "data/checkin.json"
 checkins <-
   fromJSON(sprintf("[%s]", paste(readLines(json_file), collapse = ",")))
 
@@ -138,29 +138,27 @@ function(input, output, session) {
     restaurantName <- activeRestaurants[L, which(colnames(activeRestaurants) == "biz_rest.name")]
     restaurantBusinessId <- activeRestaurants[L, which(colnames(activeRestaurants) == "biz_rest.business_id")]
 
-    print("id: ")
-    print(restaurantBusinessId)
-    print("name: ")
-    print(restaurantName)
-    print("---")
+    # print("id: ")
+    # print(restaurantBusinessId)
+    # print("name: ")
+    # print(restaurantName)
+    # print("---")
 
     output$restaurantName <- renderText({
       restaurantName
     })
 
-    #restaurantBusinessId <- "EeM2Zfji_KrjcQorUgG74A"
-
     print(which(checkins$business_id == restaurantBusinessId))
 
     restaurantCheckins <-
       subset(checkins, business_id == restaurantBusinessId)
-    #subset(checkins, business_id == "kREVIrSBbtqBhIYkTccQUg")
 
     if(nrow(restaurantCheckins) == 0){
+      printf("no statistics available")
       return(NULL)
     }
 
-    print("passed length check")
+    # print("passed length check")
 
     output$visitsPerDay <- renderPlot(res = 125, expr = {
 
