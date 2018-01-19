@@ -244,26 +244,25 @@ function(input, output, session) {
         sReviewsTable$review_dat.business_id == restaurantBusinessId
       sReviewsTable <- sReviewsTable[wo,]
       
-      print("filterForReviewPerYear:")
-      print(nrow(sReviewsTable))
-      
-      # filter on stars
-      lower <- as.numeric(input$reviewsPerYearNumStars[1])
-      wo <- sReviewsTable$review_dat.stars >= lower
-      sReviewsTable <- sReviewsTable[wo,]
-      upper <- as.numeric(input$reviewsPerYearNumStars[2])
-      wo <- sReviewsTable$review_dat.stars <= upper
-      sReviewsTable <- sReviewsTable[wo,]
-      
     })
     
-    output$reviewsPerYear <- renderPlot(res = 100, expr = {
+    output$reviewsPerYearNormalized <- renderPlot(res = 100, expr = {
       p <- ggplot() 
       p <- p + geom_bar(aes(y = 1, #as.character(review_dat.stars), 
                             x = Year, fill = as.character(review_dat.stars)), 
-                            data = filterForReviewPerYear(),
-                            stat="identity", position = "fill")
-      p <- p + xlab("Year") + ylab("Number of Reviews")
+                        data = filterForReviewPerYear(),
+                        stat="identity", position = "fill")
+      p <- p + labs(x ="Year", y= "Normalized Share of Reviews", fill = "Stars")
+      p
+    })
+    
+    output$reviewsPerYearRegular <- renderPlot(res = 100, expr = {
+      p <- ggplot() 
+      p <- p + geom_bar(aes(y = 10, 
+                            x = filterForReviewPerYear()$Year, fill = as.character(review_dat.stars)), 
+                        data = filterForReviewPerYear(),
+                        stat="identity")
+      p <- p + labs(x ="Year", y= "Number of Reviews", fill = "Stars")
       p
     })
     

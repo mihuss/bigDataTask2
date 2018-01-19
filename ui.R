@@ -84,14 +84,18 @@ navbarPage(
       tabPanel("Reviews per Year",
                fluidRow(column(
                  4,
-                 sliderInput(
-                   "reviewsPerYearNumStars",
-                   "Select the Number of stars",
-                   min = 1,
-                   max = 5,
-                   value = c(4, 5)
+                 radioButtons("reviewsPerYearRadio", h3("Select the plot"),
+                              choices = list("Count of reviews" = 1, "Normalized" = 2), selected = 1),
+                 
+                 conditionalPanel(
+                   condition = "input.reviewsPerYearRadio == 1",
+                   plotOutput("reviewsPerYearNormalized", height = 500, width = 500)
                  ),
-                 plotOutput("reviewsPerYear", height = 500, width = 500)
+                 
+                 conditionalPanel(
+                   condition = "input.reviewsPerYearRadio == 2",
+                   plotOutput("reviewsPerYearRegular", height = 500, width = 500)
+                 )
                ))),
       tabPanel("Component 4"),
       "-----",
