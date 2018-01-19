@@ -254,19 +254,13 @@ function(input, output, session) {
     })
     
     output$reviewsPerYear <- renderPlot(res = 100, expr = {
-      p <-
-        ggplot(filterForReviewPerYear(),
-               aes(filterForReviewPerYear()$Year)) + geom_histogram(binwidth = 0.5)
+      p <- ggplot() 
+      p <- p + geom_bar(aes(y = 1, #as.character(review_dat.stars), 
+                            x = Year, fill = as.character(review_dat.stars)), 
+                            data = filterForReviewPerYear(),
+                            stat="identity", position = "fill")
       p <- p + xlab("Year") + ylab("Number of Reviews")
       p
-      #print(filterForReviewPerYear())
-      # ggplot(filterForReviewPerYear(),
-      #         aes(filterForReviewPerYear()$Year),
-      #        ylab = "Number of Checkins",
-      #        xlab = "Hour")
-      # + geom_histogram(binwidth = 0.5)
-      # + aes_string(color="blue")
-      # + geom_freqpoly(binwidth = 1, alpha = 0.5 )
     })
     
     #output$marker_lat <- click$lat
