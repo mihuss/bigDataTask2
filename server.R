@@ -2,62 +2,63 @@ library(leaflet)
 library(RColorBrewer)
 library(scales)
 library(lattice)
+library(jsonlite)
 #library(dplyr)
 
 # Read pre-processed data
 #
-bizrates <- read.table("bizrates.dat")
+bizrates <- read.table("bizrates.dat", stringsAsFactors = FALSE, colClasses=c("biz_rest.review_count"="numeric"))
+
+reviewsA <- read.table("reviewA.dat", stringsAsFactors = FALSE)
+reviewsB <- read.table("reviewB.dat", stringsAsFactors = FALSE)
+reviewsC <- read.table("reviewC.dat", stringsAsFactors = FALSE)
+
+reviewsTable <- rbind(reviewsA, reviewsB, reviewsC)
 
 json_file <- "checkin.json"
 checkins <-
   fromJSON(sprintf("[%s]", paste(readLines(json_file), collapse = ",")))
 
 function(input, output, session) {
-
+  
   ## Controls / Filters ###########################################
   filteredBiz <- reactive({
     lower <- 1
     upper <- 5
     
-    Sbizrates = bizrates
+    Sbizrates <- bizrates
     
     # filter takeout only
-    if (input$takeout)
-      wo <- (Sbizrates$biz_dat.attributes..Take.out. == TRUE)
-    else
-      # wo <- (Sbizrates$biz_dat.attributes..Take.out. == FALSE)
-    Sbizrates <- Sbizrates[wo, ]
+    if (input$takeout){
+      wo <- (Sbizrates$biz_rest.attributes.RestaurantsTakeOut == TRUE)
+      Sbizrates <- Sbizrates[wo, ]
+    }
     
     # filter Reservations only
-    if (input$reserve)
+    if (input$reserve){
       wo <-
-      (Sbizrates$biz_dat.attributes..Takes.Reservations. == TRUE)
-    else
-      # wo <-
-      # (Sbizrates$biz_dat.attributes..Takes.Reservations. == FALSE)
-    Sbizrates <- Sbizrates[wo, ]
+      (Sbizrates$biz_rest.attributes.RestaurantsReservations == TRUE)
+      Sbizrates <- Sbizrates[wo, ]
+    }
     
     # filter WiFi only
-    if (input$wifi)
-      wo <- (Sbizrates$biz_dat.attributes..Wi.Fi. == "free")
-    else
-      # wo <- (Sbizrates$biz_dat.attributes..Wi.Fi. == FALSE)
-    Sbizrates <- Sbizrates[wo, ]
-    
-    
+    if (input$wifi){
+      wo <- (Sbizrates$biz_rest.attributes.WiFi == "free")
+      Sbizrates <- Sbizrates[wo, ]
+    }
+
     # filter Caters only
-    if (input$caters)
-      wo <- (Sbizrates$biz_dat.attributes.Caters == TRUE)
-    else
-      wo <- (Sbizrates$biz_dat.attributes.Caters == FALSE)
-    Sbizrates <- Sbizrates[wo, ]
+    if (input$caters){
+      wo <- (Sbizrates$biz_rest.attributes.Caters == TRUE)
+      Sbizrates <- Sbizrates[wo, ]
+    }
     
     # filter on stars
     lower <- as.numeric(input$num_stars[1])
-    wo <- Sbizrates$biz_dat.stars >= lower
+    wo <- Sbizrates$biz_rest.stars >= lower
     Sbizrates <- Sbizrates[wo, ]
     upper <- as.numeric(input$num_stars[2])
-    wo <- Sbizrates$biz_dat.stars <= upper
+    wo <- Sbizrates$biz_rest.stars <= upper
     Sbizrates <- Sbizrates[wo, ]
     
   })
@@ -72,15 +73,15 @@ function(input, output, session) {
       mapOptions(zoomToLimits = "always") %>%
       
       addMarkers(
-        lat = filteredBiz()$biz_dat.latitude,
-        lng = filteredBiz()$biz_dat.longitude,
+        lat = filteredBiz()$biz_rest.latitude,
+        lng = filteredBiz()$biz_rest.longitude,
         clusterOptions = markerClusterOptions(),
         popup = paste(
           "Rating: ",
-          filteredBiz()$biz_dat.stars,
+          filteredBiz()$biz_rest.stars,
           "<br>",
           "Name: ",
-          filteredBiz()$biz_dat.name,
+          filteredBiz()$biz_rest.name,
           "<br>"
         )
       )
@@ -95,21 +96,22 @@ function(input, output, session) {
     bounds <- input$mymap_bounds
     latRng <- range(bounds$north, bounds$south)
     lngRng <- range(bounds$east, bounds$west)
-    
+
     subset(
       filteredBiz(),
-      biz_dat.latitude >= latRng[1] &
-        biz_dat.latitude <= latRng[2] &
-        biz_dat.longitude >= lngRng[1] &
-        biz_dat.longitude <= lngRng[2]
+      biz_rest.latitude >= latRng[1] &
+        biz_rest.latitude <= latRng[2] &
+        biz_rest.longitude >= lngRng[1] &
+        biz_rest.longitude <= lngRng[2]
     )
   })
-  
+
   output$scatterStarsReviewCount <- renderPlot({
+
     # If no restaurants are in view, don't plot
     if (nrow(restaurantsInBounds()) == 0)
       return(NULL)
-    
+
     cat(file = stderr(),
         "num restaurants:",
         nrow(restaurantsInBounds()),
@@ -117,56 +119,53 @@ function(input, output, session) {
     
     print(
       xyplot(
-        restaurantsInBounds()$biz_dat.review_count ~ restaurantsInBounds()$biz_dat.stars,
-        data = restaurantsInBounds()
+        restaurantsInBounds()$biz_rest.review_count ~ restaurantsInBounds()$biz_rest.stars,
+        data = restaurantsInBounds(), xlab="Stars", ylab="Number of Reviews"
       ),
-      ylim = range(bizrates$biz_dat.stars),
-      xlim = range(bizrates$biz_dat.review_count)
+      ylim = range(bizrates$biz_rest.stars),
+      xlim = range(bizrates$biz_rest.review_count)
     )
   })
-  
-  
-  
+
+
+
   observeEvent(input$mymap_marker_click,{
     click <- input$mymap_marker_click
 
     activeRestaurants <- restaurantsInBounds()
-    
-    # currentBusinessIdFrame <- activeRestaurants %>% filter(biz_dat.latitude == click$lat) %>% select(biz_dat.business_id)
-    # currentBusinessId <- currentBusinessIdFrame[,]
-    
-    L = activeRestaurants$biz_dat.latitude == click$lat
-    currentBusinessId <- as.character(activeRestaurants[L,]$biz_dat.business_id[1])
-    currentBusinessId <- unlist(strsplit(currentBusinessId, " ")[1])
-    
+
+    L <- activeRestaurants$biz_rest.latitude == click$lat
+    restaurantName <- activeRestaurants[L, which(colnames(activeRestaurants) == "biz_rest.name")]
+    restaurantBusinessId <- activeRestaurants[L, which(colnames(activeRestaurants) == "biz_rest.business_id")]
+
     print("id: ")
-    print(currentBusinessId)
+    print(restaurantBusinessId)
+    print("name: ")
+    print(restaurantName)
     print("---")
 
-    output$console <- renderPrint({
-      print(currentBusinessId)
+    output$restaurantName <- renderText({
+      restaurantName
     })
-    
-    #currentBusinessId <- "EeM2Zfji_KrjcQorUgG74A"
-    
-    print(which(checkins$business_id == currentBusinessId))
-    
-    myBusiness <-
-      subset(checkins, business_id == currentBusinessId)
+
+    #restaurantBusinessId <- "EeM2Zfji_KrjcQorUgG74A"
+
+    print(which(checkins$business_id == restaurantBusinessId))
+
+    restaurantCheckins <-
+      subset(checkins, business_id == restaurantBusinessId)
     #subset(checkins, business_id == "kREVIrSBbtqBhIYkTccQUg")
 
-    if(nrow(myBusiness) == 0){
+    if(nrow(restaurantCheckins) == 0){
       return(NULL)
     }
-    
-    print("passed length check")
-    
-    output$visitsPerDay <- renderPlot({
-      
 
-      
-      myBusinessDays <-
-        cbind(myBusiness$business_id, myBusiness$time[, which(colnames(myBusiness$time) == input$selectedDay)])
+    print("passed length check")
+
+    output$visitsPerDay <- renderPlot(res = 125, expr = {
+
+      restaurantCheckinsDays <-
+        cbind(restaurantCheckins$business_id, restaurantCheckins$time[, which(colnames(restaurantCheckins$time) == input$selectedDay)])
 
       hoursOfTheDay <- c(
         "0:00",
@@ -194,19 +193,19 @@ function(input, output, session) {
         "22:00",
         "23:00"
       )
-      
+
       visits <- lapply(hoursOfTheDay, function(x) {
-        tmpVal <- myBusinessDays[, which(colnames(myBusinessDays) == x)]
+        tmpVal <- restaurantCheckinsDays[, which(colnames(restaurantCheckinsDays) == x)]
         if (is.na(tmpVal)) {
           0
         } else {
           tmpVal
         }
       })
-      
+
       df <-
         data.frame(hoursOfTheDay = hoursOfTheDay, visits = unlist(visits))
-      
+
       # Render a barplot
       barplot(
         df$visits,
@@ -218,13 +217,49 @@ function(input, output, session) {
         las = 2
       )
     })
-    
+
+    filterForReviewPerYear <- reactive({
+
+      sReviewsTable <- reviewsTable
+
+      # filter on business
+      wo <- sReviewsTable$review_dat.business_id == restaurantBusinessId
+      sReviewsTable <- sReviewsTable[wo, ]
+      
+      print("filterForReviewPerYear:")
+      print(nrow(sReviewsTable))
+
+      # filter on stars
+      lower <- as.numeric(input$reviewsPerYearNumStars[1])
+      wo <- sReviewsTable$review_dat.stars >= lower
+      sReviewsTable <- sReviewsTable[wo, ]
+      upper <- as.numeric(input$reviewsPerYearNumStars[2])
+      wo <- sReviewsTable$review_dat.stars <= upper
+      sReviewsTable <- sReviewsTable[wo, ]
+
+    })
+
+    output$reviewsPerYear <- renderPlot(res = 150, expr = {
+      p <- ggplot(filterForReviewPerYear(), aes(filterForReviewPerYear()$Year)) + geom_histogram(binwidth = 0.5)
+      p <- p + xlab("Year") + ylab("Number of Reviews")
+      p
+      #print(filterForReviewPerYear())
+      # ggplot(filterForReviewPerYear(), 
+      #         aes(filterForReviewPerYear()$Year),
+      #        ylab = "Number of Checkins",
+      #        xlab = "Hour")
+      # + geom_histogram(binwidth = 0.5)
+        # + aes_string(color="blue")
+        # + geom_freqpoly(binwidth = 1, alpha = 0.5 )
+    })
+
     #output$marker_lat <- click$lat
     #output$marker_lng <- click$lng
-    #text<-paste("Stars ", click$biz_dat.stars)
-    #text2<-paste("You've selected point ", click$biz_dat.stars)
+    #text<-paste("Stars ", click$biz_rest.stars)
+    #text2<-paste("You've selected point ", click$biz_rest.stars)
     #mymap$clearPopups()
-    #map$showPopup( click$biz_dat.stars, text2)
+    #map$showPopup( click$biz_rest.stars, text2)
     updateNavbarPage(session, "nav", "Data explorer")
   })
+
 }

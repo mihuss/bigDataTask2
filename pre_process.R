@@ -9,7 +9,7 @@ library(leaflet)
 library(maps)
 #
 # Read the businesses json file
-json_file<-"yelp_academic_dataset_business.json"
+json_file<-"business.json"
 biz_dat<-fromJSON(sprintf("[%s]", paste(readLines(json_file), collapse=",")))
 
 #biz_dat
@@ -22,20 +22,19 @@ category_table<-as.data.frame(allcat)
 
 # we want Restaurants
 # 
-#restaurants<-grep(pattern="",biz_dat$categories)
-#bars<-biz_rest<-biz_dat[restaurants,]
+restaurants<-grep(pattern="",biz_dat$categories)
+biz_rest<-biz_dat[restaurants,]
 #
 # and we want number of stars, latitude, longitude and state
 #  features
 #
 #catego<-fromJSON(biz_dat$categories, simplifyVector = true)
 
-bizrates<-data.frame(biz_dat$business_id,biz_dat$name,biz_dat$stars,biz_dat$longitude,biz_dat$latitude, biz_dat$state,
-                     biz_dat$attributes$`Take-out`,biz_dat$attributes$`Takes Reservations`,biz_dat$attributes$`Wi-Fi`,
-                     biz_dat$attributes$Caters, biz_dat$review_count)#,I(biz_dat$categories))
+bizrates<-data.frame(biz_rest$business_id, biz_rest$name, biz_rest$stars,biz_rest$longitude,biz_rest$latitude, biz_rest$state,
+                     biz_rest$attributes$RestaurantsTakeOut,biz_rest$attributes$RestaurantsReservations,biz_rest$attributes$WiFi,
+                     biz_rest$attributes$Caters,biz_rest$review_count)
 
-#
-  cc<-complete.cases(bizrates)
+cc<-complete.cases(bizrates)
 bizrates<-bizrates[cc,]
 write.table(bizrates,"bizrates.dat")
 #

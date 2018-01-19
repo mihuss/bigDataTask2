@@ -34,9 +34,7 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   filteredBiz <- reactive({
-    lower <- 2000
-    upper <- 2017
-    
+
     Sbizrates <- bcl
     
     # filter on business

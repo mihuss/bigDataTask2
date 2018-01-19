@@ -1,5 +1,6 @@
 library(shiny)
 library(leaflet)
+library(ggplot2)
 
 navbarPage(
   "Yelp",
@@ -42,37 +43,54 @@ navbarPage(
                         TRUE),
         checkboxInput("takeout", label = "Take-out", value = TRUE),
         checkboxInput("wifi", label = "Free Wi-Fi", value = TRUE),
-        checkboxInput("caters", label = "Caters", value = TRUE)#,
-        #plotOutput("scatterStarsReviewCount", height = 250)
+        checkboxInput("caters", label = "Caters", value = TRUE),
+        plotOutput("scatterStarsReviewCount", height = 250)
       ),
       
       tags$div(
         id = "cite",
         'Universidad Politécnica de Madrid',
         tags$em('Course Work Big Data'),
-        ' by Carolina Caballero and Michael Hußnätter (Madrid, 2018).'
+        ' by Carolina Echavarria and Michael Hußnätter (Madrid, 2018).'
       )
     )
   ),
   
-  tabPanel(
-    "Data explorer",
-    h3('bla'),
-    #verbatimTextOutput("visitsAvailable"),
-    plotOutput("scatterStarsReviewCount", height = 250),
-    selectInput(
-      "selectedDay",
-      "Select Day:",
-      c(
-        "Monday" = "Monday",
-        "Tuesday" = "Tuesday",
-        "Wednesday" = "Wednesday",
-        "Thursday" = "Thursday",
-        "Friday" = "Friday",
-        "Saturday" = "Saturday",
-        "Sunday" = "Sunday"
-      )
-    ),
-    plotOutput("visitsPerDay", height = 250)
-  )
+  tabPanel("Data explorer",
+           h2(textOutput("restaurantName")),
+           #verbatimTextOutput("visitsAvailable"),
+           fluidRow(
+             column(
+               4,
+               h3("Checkins per Day"),
+               selectInput(
+                 "selectedDay",
+                 "Select Day:",
+                 c(
+                   "Monday" = "Monday",
+                   "Tuesday" = "Tuesday",
+                   "Wednesday" = "Wednesday",
+                   "Thursday" = "Thursday",
+                   "Friday" = "Friday",
+                   "Saturday" = "Saturday",
+                   "Sunday" = "Sunday"
+                 )
+               ),
+               plotOutput("visitsPerDay", height = 250, width = 400)
+             ),
+             
+             column(
+               4,
+               h3("Reviews per Year"),
+               sliderInput(
+                 "reviewsPerYearNumStars",
+                 "Select the Number of stars",
+                 min = 1,
+                 max = 5,
+                 value = c(4, 5)
+               ),
+               plotOutput("reviewsPerYear", height = 250, width = 400)
+             )
+           ))
 )
+

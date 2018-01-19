@@ -5,36 +5,50 @@
 #
 library(jsonlite)
 library(UsingR)
-library(leaflet)
-library(maps)
-library(dplyr)
-library(tidyr)
 library(reshape2)
 
+# CREATE FILE A
 
-#
-# Read the businesses json file
-json_file<-"review1000.json"
-biz_dat<-fromJSON(sprintf("[%s]", paste(readLines(json_file), collapse=",")))
+json_file<-"splitReviewA.json"
+review_dat<-fromJSON(sprintf("[%s]", paste(readLines(json_file), collapse=",")))
 
-dates<-biz_dat$date
-listdates<-unlist(dates)
-alldates<-table(listdates)
-days_table<-as.data.frame(alldates)
-
-bizrates<-data.frame(biz_dat$business_id, biz_dat$stars, biz_dat$date)#, biz_dat$time$Tuesday, biz_dat$time$Wednesday, biz_dat$time$Thursday, biz_dat$time$Friday, biz_dat$time$Saturday, biz_dat$time$Sunday, row.names = c(NA, -7L), class = "data.frame")#,I(biz_dat$categories))
+reviewDf<-data.frame(review_dat$business_id, review_dat$stars, review_dat$date)#, review_dat$time$Tuesday, review_dat$time$Wednesday, review_dat$time$Thursday, review_dat$time$Friday, review_dat$time$Saturday, review_dat$time$Sunday, row.names = c(NA, -7L), class = "data.frame")#,I(review_dat$categories))
 
 newColNames <- c("Year", "Month", "Day")
-newCols <- colsplit(biz_dat$date, "-", newColNames)
-bizrates2 <- cbind(bizrates, newCols)
+newCols <- colsplit(review_dat$date, "-", newColNames)
+reviewDf2 <- cbind(reviewDf, newCols)
 
+cc<-complete.cases(reviewDf2)
+reviewDf2<-reviewDf2[cc,]
+write.table(reviewDf2,"reviewA.dat")
 
-#Day <- c('Friday', 'Friday','Friday', 'Friday', 'Friday')
-#Hour <- c('12:00 ', '13:00', '14:00', '15:00', '16:00')
-#value <- c('4 ', '5', '8', '4','10')
+# CREATE FILE B
 
-#df2 <- data.frame(Day, Hour, value)
+json_file<-"splitReviewB.json"
+review_dat<-fromJSON(sprintf("[%s]", paste(readLines(json_file), collapse=",")))
 
-cc<-complete.cases(bizrates2)
-bizrates2<-bizrates2[cc,]
-write.table(bizrates2,"checkins2.dat")
+reviewDf<-data.frame(review_dat$business_id, review_dat$stars, review_dat$date)#, review_dat$time$Tuesday, review_dat$time$Wednesday, review_dat$time$Thursday, review_dat$time$Friday, review_dat$time$Saturday, review_dat$time$Sunday, row.names = c(NA, -7L), class = "data.frame")#,I(review_dat$categories))
+
+newColNames <- c("Year", "Month", "Day")
+newCols <- colsplit(review_dat$date, "-", newColNames)
+reviewDf2 <- cbind(reviewDf, newCols)
+
+cc<-complete.cases(reviewDf2)
+reviewDf2<-reviewDf2[cc,]
+write.table(reviewDf2,"reviewB.dat")
+
+# CREATE FILE C
+
+json_file<-"splitReviewC.json"
+review_dat<-fromJSON(sprintf("[%s]", paste(readLines(json_file), collapse=",")))
+
+reviewDf<-data.frame(review_dat$business_id, review_dat$stars, review_dat$date)#, review_dat$time$Tuesday, review_dat$time$Wednesday, review_dat$time$Thursday, review_dat$time$Friday, review_dat$time$Saturday, review_dat$time$Sunday, row.names = c(NA, -7L), class = "data.frame")#,I(review_dat$categories))
+
+newColNames <- c("Year", "Month", "Day")
+newCols <- colsplit(review_dat$date, "-", newColNames)
+reviewDf2 <- cbind(reviewDf, newCols)
+
+cc<-complete.cases(reviewDf2)
+reviewDf2<-reviewDf2[cc,]
+write.table(reviewDf2,"reviewC.dat")
+
