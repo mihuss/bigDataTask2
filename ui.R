@@ -57,7 +57,7 @@ navbarPage(
   ),
   
   tabPanel("Data explorer",
-           h2(textOutput("restaurantName")),
+           h2(paste("Selected Restaurant: ", textOutput("restaurantName")),
            #verbatimTextOutput("visitsAvailable"),
            fluidRow(
              column(
@@ -76,7 +76,7 @@ navbarPage(
                    "Sunday" = "Sunday"
                  )
                ),
-               plotOutput("visitsPerDay", height = 600, width = 500)
+               plotOutput("visitsPerDay", height = 500, width = 500)
              ),
              
              column(

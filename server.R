@@ -6,19 +6,20 @@ library(jsonlite)
 #library(dplyr)
 
 # Read pre-processed data
-#
-bizrates <- read.table("data/bizrates.dat", stringsAsFactors = FALSE, colClasses=c("biz_rest.review_count"="numeric"))
 
-reviewsA <- read.table("data/reviewA.dat", stringsAsFactors = FALSE)
-reviewsB <- read.table("data/reviewB.dat", stringsAsFactors = FALSE)
-reviewsC <- read.table("data/reviewC.dat", stringsAsFactors = FALSE)
+ bizrates <- read.table("data/bizrates.dat", stringsAsFactors = FALSE, colClasses=c("biz_rest.review_count"="numeric"))
 
-reviewsTable <- rbind(reviewsA, reviewsB, reviewsC)
-
-json_file <- "data/checkin.json"
-checkins <-
-  fromJSON(sprintf("[%s]", paste(readLines(json_file), collapse = ",")))
-
+ # reviewsA <- read.table("data/reviewA.dat", stringsAsFactors = FALSE)
+ # reviewsB <- read.table("data/reviewB.dat", stringsAsFactors = FALSE)
+ # reviewsC <- read.table("data/reviewC.dat", stringsAsFactors = FALSE)
+ # 
+ # reviewsTable <- rbind(reviewsA, reviewsB, reviewsC)
+ # 
+ # checkins <- read.table("data/checkins.dat", stringsAsFactors = FALSE)
+ 
+ reviewsTable <- read.table("data/reviewDev.dat", stringsAsFactors = FALSE)
+ checkins <- read.table("data/checkinsDev.dat", stringsAsFactors = FALSE, header = TRUE)
+ 
 function(input, output, session) {
   
   ## Controls / Filters ###########################################
@@ -147,9 +148,13 @@ function(input, output, session) {
     output$restaurantName <- renderText({
       restaurantName
     })
+    
+    restaurantBusinessId <- "7KPBkxAOEtb3QeIL9PEErg"
+    print("Using dev business_id:")
+    print(restaurantBusinessId)
 
     print(which(checkins$business_id == restaurantBusinessId))
-
+    
     restaurantCheckins <-
       subset(checkins, business_id == restaurantBusinessId)
 
@@ -160,10 +165,7 @@ function(input, output, session) {
 
     # print("passed length check")
 
-    output$visitsPerDay <- renderPlot(res = 125, expr = {
-
-      restaurantCheckinsDays <-
-        cbind(restaurantCheckins$business_id, restaurantCheckins$time[, which(colnames(restaurantCheckins$time) == input$selectedDay)])
+    output$visitsPerDay <- renderPlot(res = 100, expr = {
 
       hoursOfTheDay <- c(
         "0:00",
@@ -191,9 +193,10 @@ function(input, output, session) {
         "22:00",
         "23:00"
       )
-
-      visits <- lapply(hoursOfTheDay, function(x) {
-        tmpVal <- restaurantCheckinsDays[, which(colnames(restaurantCheckinsDays) == x)]
+      
+      visits <- lapply(hoursOfTheDay, function(hour) {
+        currentCol <- paste("time", input$selectedDay, gsub(":", ".", hour), sep = ".")
+        tmpVal <- restaurantCheckins[[currentCol]]
         if (is.na(tmpVal)) {
           0
         } else {
@@ -237,7 +240,7 @@ function(input, output, session) {
 
     })
 
-    output$reviewsPerYear <- renderPlot(res = 150, expr = {
+    output$reviewsPerYear <- renderPlot(res = 100, expr = {
       p <- ggplot(filterForReviewPerYear(), aes(filterForReviewPerYear()$Year)) + geom_histogram(binwidth = 0.5)
       p <- p + xlab("Year") + ylab("Number of Reviews")
       p
