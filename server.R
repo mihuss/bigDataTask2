@@ -77,10 +77,13 @@ function(input, output, session) {
   output$mymap <- renderLeaflet({
     # generate map
     leaflet() %>%
-      addTiles() %>%
-      addTiles(urlTemplate = "http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png")  %>%
-      mapOptions(zoomToLimits = "always") %>%
-      
+      addTiles(urlTemplate = "http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png")#  %>%
+  })
+  
+  # Adding markers like this will prevent zoom level to be reset when changing map filters
+  observe({
+    leafletProxy("mymap") %>%
+      clearShapes() %>%
       addMarkers(
         lat = filteredBiz()$biz_rest.latitude,
         lng = filteredBiz()$biz_rest.longitude,
@@ -94,6 +97,7 @@ function(input, output, session) {
           "<br>"
         )
       )
+      
   })
   
   
