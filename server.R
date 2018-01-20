@@ -1,4 +1,5 @@
 library(leaflet)
+library(leaflet.extras)
 library(RColorBrewer)
 library(scales)
 library(lattice)
@@ -79,6 +80,38 @@ function(input, output, session) {
     leaflet() %>%
       addTiles(urlTemplate = "http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png")#  %>%
   })
+  
+  output$heatmapReviews <- renderLeaflet({
+    
+    # generate map
+    leaflet() %>% 
+      addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
+
+      addMarkers(
+        lat = filteredBiz()$biz_rest.latitude,
+        lng = filteredBiz()$biz_rest.longitude,
+        clusterOptions = markerClusterOptions(),
+        popup = paste(
+          "Rating: ",
+          filteredBiz()$biz_rest.review_count,
+          "<br>",
+          "Name: ",
+          filteredBiz()$biz_rest.name,
+          "<br>"
+        )
+      )
+  })
+  
+  observe({
+    print(max(filteredBiz()$biz_rest.review_count))
+    leafletProxy("heatmapReviews") %>%
+    addHeatmap(lng = filteredBiz()$biz_rest.longitude, lat = filteredBiz()$biz_rest.latitude, 
+               minOpacity = 0.4, max = max(filteredBiz()$biz_rest.review_count), intensity = filteredBiz()$biz_rest.review_count,
+               gradient = "YlOrRd", radius = 25, blur = 20, data = filteredBiz())
+    
+  })
+  
+
   
   # Adding markers like this will prevent zoom level to be reset when changing map filters
   observe({
@@ -223,17 +256,24 @@ function(input, output, session) {
         data.frame(hoursOfTheDay = hoursOfTheDay, visits = unlist(visits))
       
       # Render a barplot
-      barplot(
-        df$visits,
-        main = "Total Checkins per Hour",
-        ylab = "Number of Checkins",
-        xlab = "Hour",
-        ylim = range(0, max(c(
-          5, max(df$visits)
-        ))),
-        names.arg = df$hoursOfTheDay,
-        las = 2
-      )
+      p<-ggplot(data=df, aes(x=hoursOfTheDay, y=visits)) +
+        geom_bar(stat="identity", fill="steelblue")
+      p <- p + labs(x ="Hour", y= "Number of Check-ins")
+      p <- p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0))
+      p <- p + scale_x_discrete(limits=hoursOfTheDay)
+      p <- p + ylim(low = 0, high = max(c(5, max(df$visits))))
+      p
+      # barplot(
+      #   df$visits,
+      #   main = "Total Checkins per Hour",
+      #   ylab = "Number of Checkins",
+      #   xlab = "Hour",
+      #   ylim = range(0, max(c(
+      #     5, max(df$visits)
+      #   ))),
+      #   names.arg = df$hoursOfTheDay,
+      #   las = 2
+      # )
     })
     
     filterForReviewPerYear <- reactive({
@@ -253,12 +293,13 @@ function(input, output, session) {
                         data = filterForReviewPerYear(),
                         stat="identity", position = "fill")
       p <- p + labs(x ="Year", y= "Normalized Share of Reviews", fill = "Stars")
+      p <- p + scale_y_continuous(labels = percent)
       p
     })
     
     output$reviewsPerYearRegular <- renderPlot(res = 100, expr = {
       p <- ggplot() 
-      p <- p + geom_bar(aes(y = 10, 
+      p <- p + geom_bar(aes(y = 1, 
                             x = filterForReviewPerYear()$Year, fill = as.character(review_dat.stars)), 
                         data = filterForReviewPerYear(),
                         stat="identity")

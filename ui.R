@@ -15,7 +15,8 @@ navbarPage(
         includeCSS("styles.css")),
       
       # If not using custom CSS, set height of leafletOutput to a number instead of percent
-      leafletOutput("mymap", width = "100%", height = "100%"),
+      #leafletOutput("mymap", width = "100%", height = "100%"),
+      leafletOutput("heatmapReviews", width = "100%", height = "100%"),
       
       # Shiny versions prior to 0.11 should use class = "modal" instead.
       absolutePanel(
@@ -33,7 +34,7 @@ navbarPage(
         h3('Search Parameters'),
         sliderInput(
           "num_stars",
-          label = h3("Number of Stars"),
+          label = "Number of Stars",
           min = 1,
           max = 5,
           value = c(1, 5)
@@ -61,7 +62,7 @@ navbarPage(
     titlePanel(textOutput("restaurantName")),
     navlistPanel(widths = c(2, 6),
       "Header A",
-      tabPanel("Checkins per Day",
+      tabPanel("Check-ins per Day",
                fluidRow(column(
                  4,
                  selectInput(
@@ -89,12 +90,12 @@ navbarPage(
                  
                  conditionalPanel(
                    condition = "input.reviewsPerYearRadio == 1",
-                   plotOutput("reviewsPerYearNormalized", height = 500, width = 500)
+                   plotOutput("reviewsPerYearRegular", height = 500, width = 500)
                  ),
                  
                  conditionalPanel(
                    condition = "input.reviewsPerYearRadio == 2",
-                   plotOutput("reviewsPerYearRegular", height = 500, width = 500)
+                   plotOutput("reviewsPerYearNormalized", height = 500, width = 500)
                  )
                ))),
       tabPanel("Component 4"),
