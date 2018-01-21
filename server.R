@@ -15,14 +15,6 @@ bizrates <-
     colClasses = c("biz_rest.review_count" = "numeric")
   )
 
-# reviewsA <- read.table("data/reviewA.dat", stringsAsFactors = FALSE)
-# reviewsB <- read.table("data/reviewB.dat", stringsAsFactors = FALSE)
-# reviewsC <- read.table("data/reviewC.dat", stringsAsFactors = FALSE)
-# 
-# reviewsTable <- rbind(reviewsA, reviewsB, reviewsC)
-# 
-# checkins <- read.table("data/checkins.dat", stringsAsFactors = FALSE)
-
 reviewsTable <-
   read.table("data/review.dat", stringsAsFactors = FALSE)
 checkins <-
@@ -311,23 +303,18 @@ function(input, output, session) {
       p <-
         ggplot(data = dfVisitsPerDay, aes(x = hoursOfTheDay, y = visits)) +
         geom_bar(stat = "identity", fill = "steelblue")
-      print("1")
       p <- p + labs(x = "Hour", y = "Number of Check-ins")
-      print("2")
       p <-
         p + theme(axis.text.x = element_text(
           angle = 90,
           vjust = 0.5,
           hjust = 0
         ))
-      print("3")
       p <- p + scale_x_discrete(limits = hoursOfTheDay)
-      print("4")
       p <-
         p + ylim(low = 0, high = max(c(5, max(
           dfVisitsPerDay$visits
         ))))
-      print("5")
       p
     })
     
@@ -389,7 +376,6 @@ function(input, output, session) {
       summarise(totalByStar = n()) %>% arrange(desc(biz_rest.stars)) %>%
       mutate(total = sum(totalByStar)) %>% mutate(percent = round((totalByStar / total) *
                                                                     100, 1)) 
-    View(dataWeightedGroupByStateStar)
     p <-
       ggplot(
         dataWeightedGroupByStateStar,
@@ -405,6 +391,36 @@ function(input, output, session) {
     p <- p + scale_color_gradient(low = "red", high = "green")
     p <-
       p + labs(x = "State", y = "Avg. Rating", color = "Stars")
+    p <-
+      p + scale_y_continuous(breaks = seq(1, 5, 0.5))
+    p
+    
+  })
+  
+  output$totalRatingsByState <- renderPlot(res = 100, expr = {
+    dataGroupByStateStar <- bizrates %>%
+      filter(biz_rest.state != '') %>% filter(biz_rest.state != "01") %>%
+      group_by(biz_rest.state, biz_rest.stars)
+    
+    dataWeightedGroupByStateStar <- dataGroupByStateStar %>%
+      summarise(totalByStar = n()) %>% arrange(desc(biz_rest.stars)) %>%
+      mutate(total = sum(totalByStar))
+    
+    p <-
+      ggplot(
+        dataWeightedGroupByStateStar,
+        aes(x = biz_rest.state, y = biz_rest.stars, label = totalByStar)
+      )
+    p <-
+      p + geom_point(aes(
+        size = totalByStar * 2,
+        colour = biz_rest.stars
+      ), alpha = 0.5)
+    p <- p + geom_text(hjust = 0.4, size = 4)
+    p <- p + scale_size(range = c(1, 30), guide = "none")
+    p <- p + scale_color_gradient(low = "red", high = "green")
+    p <-
+      p + labs(x = "State", y = "Total Rating", color = "Stars")
     p <-
       p + scale_y_continuous(breaks = seq(1, 5, 0.5))
     p

@@ -109,12 +109,23 @@ navbarPage(
     "Inspect Dataset",
     navlistPanel(widths = c(2, 6),
       "Available Plots",
-      tabPanel("Stars vs Number of Reviews",
+      tabPanel("Stars By Number of Reviews",
                   plotOutput("scatterStarsReviewCount", height = 500, width = 500)
               ),
-      tabPanel("Avg. Ratings per State",
-                  plotOutput("avgRatingsByState", height = 500, width = 900)
+      tabPanel("Ratings By State",
+               radioButtons("avgRatingsByStateRadio", h3("Select the plot"),
+                            choices = list("Avg. Ratings By State" = 1, "Total Ratings By State" = 2), selected = 1),
+               
+               conditionalPanel(
+                 condition = "input.avgRatingsByStateRadio == 1",
+                 plotOutput("avgRatingsByState", height = 500, width = 900)
+               ),
+               
+               conditionalPanel(
+                 condition = "input.avgRatingsByStateRadio == 2",
+                 plotOutput("totalRatingsByState", height = 500, width = 900)
                )
+      )
     )
   )
 )
