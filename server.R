@@ -169,7 +169,7 @@ function(input, output, session) {
       position = "topleft"
     )
     if (input$mymap_groups[1] == "Heatmap Check-ins" | length(input$mymap_groups) == 2) {
-      mymap %>% addLegend("bottomright", pal = colorNumeric(
+      mymap %>% addLegend("bottomleft", pal = colorNumeric(
         palette = "YlOrRd",
         domain = restaurantsInBounds()$num_checkins
       ) 
