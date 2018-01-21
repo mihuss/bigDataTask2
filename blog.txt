@@ -1,0 +1,12 @@
+Authors:
+Echavarria Carolina; Hussnaetter Michael
+
+
+Comments:
+the report.doc contains hints how to execute the preprocess step 
+
+Problems found during the exercise: 
+
+A bug in the shiny example code "superzip" was found (https://github.com/rstudio/leaflet/issues/487)
+
+The input slider for stars in the first tab works properly only when program is run in viewer panel
