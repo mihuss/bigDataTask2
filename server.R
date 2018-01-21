@@ -247,10 +247,10 @@ function(input, output, session) {
     
     output$restaurantBusinessId <- renderText(restaurantBusinessId)
     
-    print(which(checkins$business_id == restaurantBusinessId))
+    print(which(checkins$biz_rest.business_id == restaurantBusinessId))
     
     restaurantCheckins <-
-      subset(checkins, business_id == restaurantBusinessId)
+      subset(checkins, biz_rest.business_id == restaurantBusinessId)
     
     if (nrow(restaurantCheckins) == 0) {
       printf("no statistics available")
@@ -325,7 +325,7 @@ function(input, output, session) {
       
       # filter on business
       wo <-
-        sReviewsTable$review_dat.business_id == restaurantBusinessId
+        sReviewsTable$biz_rest.business_id == restaurantBusinessId
       sReviewsTable <- sReviewsTable[wo, ]
       
     })

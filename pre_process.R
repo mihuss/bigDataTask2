@@ -61,7 +61,7 @@ reviewDf<-data.frame(review_dat$business_id, review_dat$stars, review_dat$date)
 
 newColNames <- c("Year", "Month", "Day")
 newCols <- colsplit(review_dat$date, "-", newColNames)
-reviewDf <- cbind(reviewDf[, 1:2], newCols[,1]) #take only Year
+reviewDf <- cbind(reviewDf[, 1:2], newCols[, 1, drop=FALSE]) #take only Year
 
 reviewDf <- merge(bizrates[, 1, drop=FALSE], reviewDf, by.x= "biz_rest.business_id", by.y = "review_dat.business_id")
 
@@ -75,7 +75,7 @@ reviewDf<-data.frame(review_dat$business_id, review_dat$stars, review_dat$date)
 
 newColNames <- c("Year", "Month", "Day")
 newCols <- colsplit(review_dat$date, "-", newColNames)
-reviewDf <- cbind(reviewDf[, 1:2], newCols[,1]) #take only Year
+reviewDf <- cbind(reviewDf[, 1:2], newCols[, 1, drop=FALSE]) #take only Year
 
 reviewDf <- merge(bizrates[, 1, drop=FALSE], reviewDf, by.x= "biz_rest.business_id", by.y = "review_dat.business_id")
 
@@ -89,7 +89,7 @@ reviewDf<-data.frame(review_dat$business_id, review_dat$stars, review_dat$date)
 
 newColNames <- c("Year", "Month", "Day")
 newCols <- colsplit(review_dat$date, "-", newColNames)
-reviewDf <- cbind(reviewDf[, 1:2], newCols[,1]) #take only Year
+reviewDf <- cbind(reviewDf[, 1:2], newCols[, 1, drop=FALSE]) #take only Year
 
 reviewDf <- merge(bizrates[, 1, drop=FALSE], reviewDf, by.x= "biz_rest.business_id", by.y = "review_dat.business_id")
 
