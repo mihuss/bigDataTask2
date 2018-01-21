@@ -158,13 +158,15 @@ function(input, output, session) {
                minOpacity = 0.4, max = max(bizrates$num_checkins), intensity = bizrates$num_checkins,
                gradient = "YlOrRd", radius = 25, blur = 20, data = bizrates, group = "Heatmap Check-ins") %>%
       addHeatmap(lng = bizrates$biz_rest.longitude, lat = bizrates$biz_rest.latitude,
-                 minOpacity = 0.4, max = max(bizrates$review_count), intensity = bizrates$review_count,
+                 minOpacity = 0.4, max = max(bizrates$biz_rest.review_count), intensity = bizrates$biz_rest.review_count,
                  gradient = "YlGn", radius = 25, blur = 20, data = bizrates, group = "Heatmap Reviews") %>%
     addLayersControl(
       overlayGroups = c("Heatmap Check-ins", "Heatmap Reviews", "Restaurants"),
       options = layersControlOptions(collapsed = FALSE),
       position = "topleft"
-    )
+    ) %>%
+    hideGroup("Heatmap Check-ins") %>%
+    hideGroup("Heatmap Reviews")
   })
   
   # output$foo <- renderText("xD")

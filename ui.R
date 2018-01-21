@@ -24,24 +24,12 @@ navbarPage(
         class = "panel panel-default",
         fixed = TRUE,
         draggable = FALSE,
-        top = 60,
+        top = 120,
         left = "auto",
         right = 20,
         bottom = "auto",
         width = 330,
         height = "auto",
-        
-        h3('Heatmap Overlay'),
-        selectInput("selectHeatmap", "Select Heatmap",
-                    choices = list("None" = "noHeatmap",
-                                   "Num. Checkins" = "heatmapNumCheckins", 
-                                   "Num. Reviews" = "heatmapNumReviews"
-                    ), 
-                    selected = 1
-        ),
-        
-        h3(textOutput("foo")),
-  
         
         h3('Search Parameters'),
         sliderInput(
