@@ -105,7 +105,7 @@ function(input, output, session) {
       )
   })
   
-
+  
   # Adding markers like this will prevent zoom level to be reset when changing map filters
   observe({
     leafletProxy("mymap") %>%
@@ -154,26 +154,30 @@ function(input, output, session) {
         ),
         group = "Restaurants"
       ) %>%
-      addHeatmap(lng = bizrates$biz_rest.longitude, lat = bizrates$biz_rest.latitude,
-               minOpacity = 0.4, max = max(bizrates$num_checkins), intensity = bizrates$num_checkins,
-               gradient = "YlOrRd", radius = 25, blur = 20, data = bizrates, group = "Heatmap Check-ins") %>%
-      addHeatmap(lng = bizrates$biz_rest.longitude, lat = bizrates$biz_rest.latitude,
-                 minOpacity = 0.4, max = max(bizrates$biz_rest.review_count), intensity = bizrates$biz_rest.review_count,
-                 gradient = "YlGn", radius = 25, blur = 20, data = bizrates, group = "Heatmap Reviews") %>%
-    addLayersControl(
-      overlayGroups = c("Heatmap Check-ins", "Heatmap Reviews", "Restaurants"),
-      options = layersControlOptions(collapsed = FALSE),
-      position = "topleft"
-    ) %>%
-    hideGroup("Heatmap Check-ins") %>%
-    hideGroup("Heatmap Reviews")
+      addHeatmap(lng = restaurantsInBounds()$biz_rest.longitude, lat = restaurantsInBounds()$biz_rest.latitude,
+                 minOpacity = 0.4, max = max(restaurantsInBounds()$num_checkins), intensity = restaurantsInBounds()$num_checkins,
+                 gradient = "YlOrRd", radius = 25, blur = 20, data = bizrates, group = "Heatmap Check-ins")
+    
   })
   
-  # output$foo <- renderText("xD")
-  # observeEvent(input$selectHeatmap, {
-  #   print("event!!")
-  #   mymap %>% hideGroup("heatmapCheckins")
-  # })
+  observeEvent(input$mymap_groups,{
+    mymap <- leafletProxy("mymap")
+    mymap %>% clearControls()
+    mymap %>% addLayersControl(
+      overlayGroups = c("Heatmap Check-ins", "Restaurants"),
+      options = layersControlOptions(collapsed = FALSE),
+      position = "topleft"
+    )
+    if (input$mymap_groups[1] == "Heatmap Check-ins" | length(input$mymap_groups) == 2) {
+      mymap %>% addLegend("bottomright", pal = colorNumeric(
+        palette = "YlOrRd",
+        domain = restaurantsInBounds()$num_checkins
+      ) 
+      , values = restaurantsInBounds()$num_checkins,
+      title = "Check-Ins",
+      opacity = 1)
+    }
+  })
   
   # A reactive expression that returns the set of restaurants that are
   # in bounds right now
