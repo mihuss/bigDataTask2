@@ -108,8 +108,11 @@ function(input, output, session) {
   
   # Adding markers like this will prevent zoom level to be reset when changing map filters
   observe({
-    leafletProxy("mymap") %>%
+    restaurantsInBoundsStatic <- restaurantsInBounds()
+    mymap <- leafletProxy("mymap") %>%
       clearShapes() %>%
+      clearMarkerClusters() %>%
+      clearMarkers() %>%
       addMarkers(
         lat = filteredBiz()$biz_rest.latitude,
         lng = filteredBiz()$biz_rest.longitude,
@@ -154,31 +157,29 @@ function(input, output, session) {
         ),
         group = "Restaurants"
       ) %>%
-      addHeatmap(lng = restaurantsInBounds()$biz_rest.longitude, lat = restaurantsInBounds()$biz_rest.latitude,
-                 minOpacity = 0.4, max = max(restaurantsInBounds()$num_checkins), intensity = restaurantsInBounds()$num_checkins,
-                 gradient = "YlOrRd", radius = 25, blur = 20, data = bizrates, group = "Heatmap Check-ins")
-    
+      clearHeatmap()
+      
+      if(nrow(restaurantsInBoundsStatic) > 0) {
+        mymap %>% addHeatmap(lng = restaurantsInBoundsStatic$biz_rest.longitude, lat = restaurantsInBoundsStatic$biz_rest.latitude,
+                   minOpacity = 0.4, max = max(restaurantsInBoundsStatic$num_checkins), intensity = restaurantsInBoundsStatic$num_checkins,
+                   gradient = "YlOrRd", radius = 25, blur = 20, data = restaurantsInBoundsStatic, group = "Heatmap Check-ins") %>%
+        clearControls() %>%
+        addLayersControl(
+          overlayGroups = c("Heatmap Check-ins", "Restaurants"),
+          options = layersControlOptions(collapsed = FALSE),
+          position = "topleft"
+        ) %>%
+        addLegend("bottomleft", pal = colorNumeric(
+            palette = "YlOrRd",
+            domain = restaurantsInBoundsStatic$num_checkins
+          )
+          , values = restaurantsInBoundsStatic$num_checkins,
+          title = "Check-Ins",
+          opacity = 1)
+     }
+
   })
-  
-  observeEvent(input$mymap_groups,{
-    mymap <- leafletProxy("mymap")
-    mymap %>% clearControls()
-    mymap %>% addLayersControl(
-      overlayGroups = c("Heatmap Check-ins", "Restaurants"),
-      options = layersControlOptions(collapsed = FALSE),
-      position = "topleft"
-    )
-    if (input$mymap_groups[1] == "Heatmap Check-ins" | length(input$mymap_groups) == 2) {
-      mymap %>% addLegend("bottomleft", pal = colorNumeric(
-        palette = "YlOrRd",
-        domain = restaurantsInBounds()$num_checkins
-      ) 
-      , values = restaurantsInBounds()$num_checkins,
-      title = "Check-Ins",
-      opacity = 1)
-    }
-  })
-  
+
   # A reactive expression that returns the set of restaurants that are
   # in bounds right now
   restaurantsInBounds <- reactive({
