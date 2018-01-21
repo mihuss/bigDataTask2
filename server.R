@@ -305,18 +305,23 @@ function(input, output, session) {
       p <-
         ggplot(data = dfVisitsPerDay, aes(x = hoursOfTheDay, y = visits)) +
         geom_bar(stat = "identity", fill = "steelblue")
+      print("1")
       p <- p + labs(x = "Hour", y = "Number of Check-ins")
+      print("2")
       p <-
         p + theme(axis.text.x = element_text(
           angle = 90,
           vjust = 0.5,
           hjust = 0
         ))
+      print("3")
       p <- p + scale_x_discrete(limits = hoursOfTheDay)
+      print("4")
       p <-
         p + ylim(low = 0, high = max(c(5, max(
           dfVisitsPerDay$visits
         ))))
+      print("5")
       p
     })
     
@@ -336,9 +341,8 @@ function(input, output, session) {
         p <- p + geom_bar(
           aes(
             y = 1,
-            #as.character(review_dat.stars),
             x = Year,
-            fill = as.character(review_dat.stars)
+            fill = factor(review_dat.stars, levels=c("5","4","3","2","1"))
           ),
           data = filterForReviewPerYear(),
           stat = "identity",
@@ -356,7 +360,7 @@ function(input, output, session) {
         aes(
           y = 1,
           x = filterForReviewPerYear()$Year,
-          fill = as.character(review_dat.stars)
+          fill = factor(review_dat.stars, levels=c("5","4","3","2","1"))
         ),
         data = filterForReviewPerYear(),
         stat = "identity"
