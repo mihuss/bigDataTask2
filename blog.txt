@@ -4,9 +4,8 @@ Echavarria Carolina; Hussnaetter Michael
 
 Comments:
 the report.doc contains hints how to execute the preprocess step 
+All code and pre-processed files are available at: https://github.com/mihuss/bigDataTask2
 
 Problems found during the exercise: 
-
 A bug in the shiny example code "superzip" was found (https://github.com/rstudio/leaflet/issues/487)
-
 The input slider for stars in the first tab works properly only when program is run in viewer panel
