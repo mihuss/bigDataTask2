@@ -87,19 +87,20 @@ function(input, output, session) {
   
   output$heatmapReviews <- renderLeaflet({
     # generate map
+    filteredBizStatic <- filteredBiz()
     leaflet() %>%
       addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
       
       addMarkers(
-        lat = filteredBiz()$biz_rest.latitude,
-        lng = filteredBiz()$biz_rest.longitude,
+        lat = filteredBizStatic$biz_rest.latitude,
+        lng = filteredBizStatic$biz_rest.longitude,
         clusterOptions = markerClusterOptions(),
         popup = paste(
           "Rating: ",
-          filteredBiz()$biz_rest.review_count,
+          filteredBizStatic$biz_rest.review_count,
           "<br>",
           "Name: ",
-          filteredBiz()$biz_rest.name,
+          filteredBizStatic$biz_rest.name,
           "<br>"
         )
       )
@@ -109,24 +110,25 @@ function(input, output, session) {
   # Adding markers like this will prevent zoom level to be reset when changing map filters
   observe({
     restaurantsInBoundsStatic <- restaurantsInBounds()
+    filteredBizStatic <- filteredBiz()
     mymap <- leafletProxy("mymap") %>%
       clearShapes() %>%
       clearMarkerClusters() %>%
       clearMarkers() %>%
       addMarkers(
-        lat = filteredBiz()$biz_rest.latitude,
-        lng = filteredBiz()$biz_rest.longitude,
+        lat = filteredBizStatic$biz_rest.latitude,
+        lng = filteredBizStatic$biz_rest.longitude,
         clusterOptions = markerClusterOptions(),
         popup = paste(
           "<b>",
           "Name: ",
           "</b>",
-          filteredBiz()$biz_rest.name,
+          filteredBizStatic$biz_rest.name,
           "<br>",
           "<b>",
           "Rating: ",
           "</b>",
-          filteredBiz()$biz_rest.stars,
+          filteredBizStatic$biz_rest.stars,
           "Stars",
           "<br>",
           "<b>",
@@ -134,25 +136,25 @@ function(input, output, session) {
           "</b>",
           "<br>",
           "Monday: ",
-          filteredBiz()$biz_rest.hours.Monday,
+          filteredBizStatic$biz_rest.hours.Monday,
           "<br>",
           "Tuesday: ",
-          filteredBiz()$biz_rest.hours.Tuesday,
+          filteredBizStatic$biz_rest.hours.Tuesday,
           "<br>",
           "Wednesday: ",
-          filteredBiz()$biz_rest.hours.Wednesday,
+          filteredBizStatic$biz_rest.hours.Wednesday,
           "<br>",
           "Thursday: ",
-          filteredBiz()$biz_rest.hours.Thursday,
+          filteredBizStatic$biz_rest.hours.Thursday,
           "<br>",
           "Friday: ",
-          filteredBiz()$biz_rest.hours.Friday,
+          filteredBizStatic$biz_rest.hours.Friday,
           "<br>",
           "Saturday: ",
-          filteredBiz()$biz_rest.hours.Saturday,
+          filteredBizStatic$biz_rest.hours.Saturday,
           "<br>",
           "Sunday: ",
-          filteredBiz()$biz_rest.hours.Sunday,
+          filteredBizStatic$biz_rest.hours.Sunday,
           "<br>"
         ),
         group = "Restaurants"
@@ -183,14 +185,15 @@ function(input, output, session) {
   # A reactive expression that returns the set of restaurants that are
   # in bounds right now
   restaurantsInBounds <- reactive({
+    filteredBizStatic = filteredBiz()
     if (is.null(input$mymap_bounds))
-      return(filteredBiz()[FALSE, ])
+      return(filteredBizStatic[FALSE, ])
     bounds <- input$mymap_bounds
     latRng <- range(bounds$north, bounds$south)
     lngRng <- range(bounds$east, bounds$west)
     
     subset(
-      filteredBiz(),
+      filteredBizStatic,
       biz_rest.latitude >= latRng[1] &
         biz_rest.latitude <= latRng[2] &
         biz_rest.longitude >= lngRng[1] &
@@ -210,9 +213,7 @@ function(input, output, session) {
     print(
       xyplot(
         biz_rest.review_count ~ biz_rest.stars,
-        #restaurantsInBounds()$biz_rest.review_count ~ restaurantsInBounds()$biz_rest.stars,
         data = bizrates,
-        #data = restaurantsInBounds(),
         xlab = "Stars",
         ylab = "Number of Reviews"
       ),
@@ -382,14 +383,13 @@ function(input, output, session) {
   output$avgRatingsByState <- renderPlot(res = 100, expr = {
     dataGroupByStateStar <- bizrates %>%
       filter(biz_rest.state != '') %>% filter(biz_rest.state != "01") %>%
-      mutate(tsum = n()) %>% group_by(biz_rest.state, biz_rest.stars)
+      group_by(biz_rest.state, biz_rest.stars)
     
     dataWeightedGroupByStateStar <- dataGroupByStateStar %>%
       summarise(totalByStar = n()) %>% arrange(desc(biz_rest.stars)) %>%
       mutate(total = sum(totalByStar)) %>% mutate(percent = round((totalByStar / total) *
-                                                                    100, 1)) %>%
-      mutate(percentWeight = percent, 1)
-    
+                                                                    100, 1)) 
+    View(dataWeightedGroupByStateStar)
     p <-
       ggplot(
         dataWeightedGroupByStateStar,
@@ -397,17 +397,16 @@ function(input, output, session) {
       )
     p <-
       p + geom_point(aes(
-        size = percentWeight * 2,
-        colour = biz_rest.stars,
-        alpha = 0.05
-      ))
+        size = percent * 2,
+        colour = biz_rest.stars
+        ), alpha = 0.5)
     p <- p + geom_text(hjust = 0.4, size = 4)
     p <- p + scale_size(range = c(1, 30), guide = "none")
-    p <- p + scale_color_gradient(low = "darkblue", high = "red")
+    p <- p + scale_color_gradient(low = "red", high = "green")
     p <-
-      p + labs(title = "A grid of detailed avg.ratings by state ", x = "State", y = "Detailed Avg.Ratings")
+      p + labs(x = "State", y = "Avg. Rating", color = "Stars")
     p <-
-      p + scale_y_continuous(breaks = seq(1, 5, 0.5)) + theme(legend.title = element_blank())
+      p + scale_y_continuous(breaks = seq(1, 5, 0.5))
     p
     
   })
