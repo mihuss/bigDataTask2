@@ -4,7 +4,7 @@ library(RColorBrewer)
 library(scales)
 library(lattice)
 library(jsonlite)
-#library(dplyr)
+library(dplyr)
 
 # Read pre-processed data
 
@@ -18,9 +18,9 @@ bizrates <-
 # reviewsA <- read.table("data/reviewA.dat", stringsAsFactors = FALSE)
 # reviewsB <- read.table("data/reviewB.dat", stringsAsFactors = FALSE)
 # reviewsC <- read.table("data/reviewC.dat", stringsAsFactors = FALSE)
-#
+# 
 # reviewsTable <- rbind(reviewsA, reviewsB, reviewsC)
-#
+# 
 # checkins <- read.table("data/checkins.dat", stringsAsFactors = FALSE)
 
 reviewsTable <-
@@ -31,6 +31,10 @@ checkins <-
              header = TRUE)
 
 function(input, output, session) {
+  ## default value for businessId
+  output$restaurantBusinessId <- renderText('NoRestaurantSelected')
+  outputOptions(output, "restaurantBusinessId", suspendWhenHidden = FALSE)
+  
   ## Controls / Filters ###########################################
   filteredBiz <- reactive({
     lower <- 1
@@ -41,35 +45,35 @@ function(input, output, session) {
     # filter takeout only
     if (input$takeout) {
       wo <- (Sbizrates$biz_rest.attributes.RestaurantsTakeOut == TRUE)
-      Sbizrates <- Sbizrates[wo,]
+      Sbizrates <- Sbizrates[wo, ]
     }
     
     # filter Reservations only
     if (input$reserve) {
       wo <-
         (Sbizrates$biz_rest.attributes.RestaurantsReservations == TRUE)
-      Sbizrates <- Sbizrates[wo,]
+      Sbizrates <- Sbizrates[wo, ]
     }
     
     # filter WiFi only
     if (input$wifi) {
       wo <- (Sbizrates$biz_rest.attributes.WiFi == "free")
-      Sbizrates <- Sbizrates[wo,]
+      Sbizrates <- Sbizrates[wo, ]
     }
     
     # filter Caters only
     if (input$caters) {
       wo <- (Sbizrates$biz_rest.attributes.Caters == TRUE)
-      Sbizrates <- Sbizrates[wo,]
+      Sbizrates <- Sbizrates[wo, ]
     }
     
     # filter on stars
     lower <- as.numeric(input$num_stars[1])
     wo <- Sbizrates$biz_rest.stars >= lower
-    Sbizrates <- Sbizrates[wo,]
+    Sbizrates <- Sbizrates[wo, ]
     upper <- as.numeric(input$num_stars[2])
     wo <- Sbizrates$biz_rest.stars <= upper
-    Sbizrates <- Sbizrates[wo,]
+    Sbizrates <- Sbizrates[wo, ]
     
   })
   
@@ -82,11 +86,10 @@ function(input, output, session) {
   })
   
   output$heatmapReviews <- renderLeaflet({
-    
     # generate map
-    leaflet() %>% 
+    leaflet() %>%
       addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
-
+      
       addMarkers(
         lat = filteredBiz()$biz_rest.latitude,
         lng = filteredBiz()$biz_rest.longitude,
@@ -102,17 +105,7 @@ function(input, output, session) {
       )
   })
   
-  observe({
-    print(max(filteredBiz()$biz_rest.review_count))
-    leafletProxy("heatmapReviews") %>%
-    addHeatmap(lng = filteredBiz()$biz_rest.longitude, lat = filteredBiz()$biz_rest.latitude, 
-               minOpacity = 0.4, max = max(filteredBiz()$biz_rest.review_count), intensity = filteredBiz()$biz_rest.review_count,
-               gradient = "YlOrRd", radius = 25, blur = 20, data = filteredBiz())
-    
-  })
-  
 
-  
   # Adding markers like this will prevent zoom level to be reset when changing map filters
   observe({
     leafletProxy("mymap") %>%
@@ -122,23 +115,69 @@ function(input, output, session) {
         lng = filteredBiz()$biz_rest.longitude,
         clusterOptions = markerClusterOptions(),
         popup = paste(
-          "Rating: ",
-          filteredBiz()$biz_rest.stars,
-          "<br>",
+          "<b>",
           "Name: ",
+          "</b>",
           filteredBiz()$biz_rest.name,
+          "<br>",
+          "<b>",
+          "Rating: ",
+          "</b>",
+          filteredBiz()$biz_rest.stars,
+          "Stars",
+          "<br>",
+          "<b>",
+          "Opening hours: ",
+          "</b>",
+          "<br>",
+          "Monday: ",
+          filteredBiz()$biz_rest.hours.Monday,
+          "<br>",
+          "Tuesday: ",
+          filteredBiz()$biz_rest.hours.Tuesday,
+          "<br>",
+          "Wednesday: ",
+          filteredBiz()$biz_rest.hours.Wednesday,
+          "<br>",
+          "Thursday: ",
+          filteredBiz()$biz_rest.hours.Thursday,
+          "<br>",
+          "Friday: ",
+          filteredBiz()$biz_rest.hours.Friday,
+          "<br>",
+          "Saturday: ",
+          filteredBiz()$biz_rest.hours.Saturday,
+          "<br>",
+          "Sunday: ",
+          filteredBiz()$biz_rest.hours.Sunday,
           "<br>"
-        )
-      )
-      
+        ),
+        group = "Restaurants"
+      ) %>%
+      addHeatmap(lng = bizrates$biz_rest.longitude, lat = bizrates$biz_rest.latitude,
+               minOpacity = 0.4, max = max(bizrates$num_checkins), intensity = bizrates$num_checkins,
+               gradient = "YlOrRd", radius = 25, blur = 20, data = bizrates, group = "Heatmap Check-ins") %>%
+      addHeatmap(lng = bizrates$biz_rest.longitude, lat = bizrates$biz_rest.latitude,
+                 minOpacity = 0.4, max = max(bizrates$review_count), intensity = bizrates$review_count,
+                 gradient = "YlGn", radius = 25, blur = 20, data = bizrates, group = "Heatmap Reviews") %>%
+    addLayersControl(
+      overlayGroups = c("Heatmap Check-ins", "Heatmap Reviews", "Restaurants"),
+      options = layersControlOptions(collapsed = FALSE),
+      position = "topleft"
+    )
   })
   
+  # output$foo <- renderText("xD")
+  # observeEvent(input$selectHeatmap, {
+  #   print("event!!")
+  #   mymap %>% hideGroup("heatmapCheckins")
+  # })
   
   # A reactive expression that returns the set of restaurants that are
   # in bounds right now
   restaurantsInBounds <- reactive({
     if (is.null(input$mymap_bounds))
-      return(filteredBiz()[FALSE,])
+      return(filteredBiz()[FALSE, ])
     bounds <- input$mymap_bounds
     latRng <- range(bounds$north, bounds$south)
     lngRng <- range(bounds$east, bounds$west)
@@ -152,20 +191,21 @@ function(input, output, session) {
     )
   })
   
+  output$overviewRestaurants <- renderText({
+    paste("Shown Restaurants: ",
+          nrow(restaurantsInBounds()),
+          "of ",
+          nrow(bizrates))
+  })
+  
   output$scatterStarsReviewCount <- renderPlot({
-    # If no restaurants are in view, don't plot
-    if (nrow(restaurantsInBounds()) == 0)
-      return(NULL)
-    
-    cat(file = stderr(),
-        "num restaurants:",
-        nrow(restaurantsInBounds()),
-        "\n")
     
     print(
       xyplot(
-        restaurantsInBounds()$biz_rest.review_count ~ restaurantsInBounds()$biz_rest.stars,
-        data = restaurantsInBounds(),
+        biz_rest.review_count ~ biz_rest.stars,
+        #restaurantsInBounds()$biz_rest.review_count ~ restaurantsInBounds()$biz_rest.stars,
+        data = bizrates,
+        #data = restaurantsInBounds(),
         xlab = "Stars",
         ylab = "Number of Reviews"
       ),
@@ -173,6 +213,8 @@ function(input, output, session) {
       xlim = range(bizrates$biz_rest.review_count)
     )
   })
+  
+  
   
   
   
@@ -200,6 +242,8 @@ function(input, output, session) {
     restaurantBusinessId <- "7KPBkxAOEtb3QeIL9PEErg"
     print("Using dev business_id:")
     print(restaurantBusinessId)
+    
+    output$restaurantBusinessId <- renderText(restaurantBusinessId)
     
     print(which(checkins$business_id == restaurantBusinessId))
     
@@ -252,28 +296,26 @@ function(input, output, session) {
         }
       })
       
-      df <-
+      dfVisitsPerDay <-
         data.frame(hoursOfTheDay = hoursOfTheDay, visits = unlist(visits))
       
       # Render a barplot
-      p<-ggplot(data=df, aes(x=hoursOfTheDay, y=visits)) +
-        geom_bar(stat="identity", fill="steelblue")
-      p <- p + labs(x ="Hour", y= "Number of Check-ins")
-      p <- p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0))
-      p <- p + scale_x_discrete(limits=hoursOfTheDay)
-      p <- p + ylim(low = 0, high = max(c(5, max(df$visits))))
+      p <-
+        ggplot(data = dfVisitsPerDay, aes(x = hoursOfTheDay, y = visits)) +
+        geom_bar(stat = "identity", fill = "steelblue")
+      p <- p + labs(x = "Hour", y = "Number of Check-ins")
+      p <-
+        p + theme(axis.text.x = element_text(
+          angle = 90,
+          vjust = 0.5,
+          hjust = 0
+        ))
+      p <- p + scale_x_discrete(limits = hoursOfTheDay)
+      p <-
+        p + ylim(low = 0, high = max(c(5, max(
+          dfVisitsPerDay$visits
+        ))))
       p
-      # barplot(
-      #   df$visits,
-      #   main = "Total Checkins per Hour",
-      #   ylab = "Number of Checkins",
-      #   xlab = "Hour",
-      #   ylim = range(0, max(c(
-      #     5, max(df$visits)
-      #   ))),
-      #   names.arg = df$hoursOfTheDay,
-      #   las = 2
-      # )
     })
     
     filterForReviewPerYear <- reactive({
@@ -282,38 +324,81 @@ function(input, output, session) {
       # filter on business
       wo <-
         sReviewsTable$review_dat.business_id == restaurantBusinessId
-      sReviewsTable <- sReviewsTable[wo,]
+      sReviewsTable <- sReviewsTable[wo, ]
       
     })
     
-    output$reviewsPerYearNormalized <- renderPlot(res = 100, expr = {
-      p <- ggplot() 
-      p <- p + geom_bar(aes(y = 1, #as.character(review_dat.stars), 
-                            x = Year, fill = as.character(review_dat.stars)), 
-                        data = filterForReviewPerYear(),
-                        stat="identity", position = "fill")
-      p <- p + labs(x ="Year", y= "Normalized Share of Reviews", fill = "Stars")
-      p <- p + scale_y_continuous(labels = percent)
-      p
-    })
+    output$reviewsPerYearNormalized <-
+      renderPlot(res = 100, expr = {
+        p <- ggplot()
+        p <- p + geom_bar(
+          aes(
+            y = 1,
+            #as.character(review_dat.stars),
+            x = Year,
+            fill = as.character(review_dat.stars)
+          ),
+          data = filterForReviewPerYear(),
+          stat = "identity",
+          position = "fill"
+        )
+        p <-
+          p + labs(x = "Year", y = "Normalized Share of Reviews", fill = "Stars")
+        p <- p + scale_y_continuous(labels = percent)
+        p
+      })
     
     output$reviewsPerYearRegular <- renderPlot(res = 100, expr = {
-      p <- ggplot() 
-      p <- p + geom_bar(aes(y = 1, 
-                            x = filterForReviewPerYear()$Year, fill = as.character(review_dat.stars)), 
-                        data = filterForReviewPerYear(),
-                        stat="identity")
-      p <- p + labs(x ="Year", y= "Number of Reviews", fill = "Stars")
+      p <- ggplot()
+      p <- p + geom_bar(
+        aes(
+          y = 1,
+          x = filterForReviewPerYear()$Year,
+          fill = as.character(review_dat.stars)
+        ),
+        data = filterForReviewPerYear(),
+        stat = "identity"
+      )
+      p <-
+        p + labs(x = "Year", y = "Number of Reviews", fill = "Stars")
       p
     })
     
-    #output$marker_lat <- click$lat
-    #output$marker_lng <- click$lng
-    #text<-paste("Stars ", click$biz_rest.stars)
-    #text2<-paste("You've selected point ", click$biz_rest.stars)
-    #mymap$clearPopups()
-    #map$showPopup( click$biz_rest.stars, text2)
-    updateNavbarPage(session, "nav", "Data explorer")
+  })
+  
+  ####### average per state #########
+  
+  output$avgRatingsByState <- renderPlot(res = 100, expr = {
+    dataGroupByStateStar <- bizrates %>%
+      filter(biz_rest.state != '') %>% filter(biz_rest.state != "01") %>%
+      mutate(tsum = n()) %>% group_by(biz_rest.state, biz_rest.stars)
+    
+    dataWeightedGroupByStateStar <- dataGroupByStateStar %>%
+      summarise(totalByStar = n()) %>% arrange(desc(biz_rest.stars)) %>%
+      mutate(total = sum(totalByStar)) %>% mutate(percent = round((totalByStar / total) *
+                                                                    100, 1)) %>%
+      mutate(percentWeight = percent, 1)
+    
+    p <-
+      ggplot(
+        dataWeightedGroupByStateStar,
+        aes(x = biz_rest.state, y = biz_rest.stars, label = percent)
+      )
+    p <-
+      p + geom_point(aes(
+        size = percentWeight * 2,
+        colour = biz_rest.stars,
+        alpha = 0.05
+      ))
+    p <- p + geom_text(hjust = 0.4, size = 4)
+    p <- p + scale_size(range = c(1, 30), guide = "none")
+    p <- p + scale_color_gradient(low = "darkblue", high = "red")
+    p <-
+      p + labs(title = "A grid of detailed avg.ratings by state ", x = "State", y = "Detailed Avg.Ratings")
+    p <-
+      p + scale_y_continuous(breaks = seq(1, 5, 0.5)) + theme(legend.title = element_blank())
+    p
+    
   })
   
 }

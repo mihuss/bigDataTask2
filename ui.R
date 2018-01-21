@@ -3,11 +3,11 @@ library(leaflet)
 library(ggplot2)
 
 navbarPage(
-  "Yelp",
+  "Yelp Analyzer",
   id = "nav",
   
   tabPanel(
-    "Interactive map",
+    "Look for a restaurant",
     div(
       class = "outer",
       
@@ -15,8 +15,8 @@ navbarPage(
         includeCSS("styles.css")),
       
       # If not using custom CSS, set height of leafletOutput to a number instead of percent
-      #leafletOutput("mymap", width = "100%", height = "100%"),
-      leafletOutput("heatmapReviews", width = "100%", height = "100%"),
+      leafletOutput("mymap", width = "100%", height = "100%"),
+      #leafletOutput("heatmapReviews", width = "100%", height = "100%"),
       
       # Shiny versions prior to 0.11 should use class = "modal" instead.
       absolutePanel(
@@ -30,6 +30,18 @@ navbarPage(
         bottom = "auto",
         width = 330,
         height = "auto",
+        
+        h3('Heatmap Overlay'),
+        selectInput("selectHeatmap", "Select Heatmap",
+                    choices = list("None" = "noHeatmap",
+                                   "Num. Checkins" = "heatmapNumCheckins", 
+                                   "Num. Reviews" = "heatmapNumReviews"
+                    ), 
+                    selected = 1
+        ),
+        
+        h3(textOutput("foo")),
+  
         
         h3('Search Parameters'),
         sliderInput(
@@ -45,7 +57,55 @@ navbarPage(
         checkboxInput("takeout", label = "Take-out", value = TRUE),
         checkboxInput("wifi", label = "Free Wi-Fi", value = TRUE),
         checkboxInput("caters", label = "Caters", value = TRUE),
-        plotOutput("scatterStarsReviewCount", height = 250)
+        
+        textOutput("overviewRestaurants"),
+        
+        #### select plots
+        
+        conditionalPanel(
+          condition = "output.restaurantBusinessId == 'NoRestaurantSelected'",
+          h3("Please select a restaurant.")
+        ),
+        conditionalPanel(
+          condition = "output.restaurantBusinessId != 'NoRestaurantSelected'",
+          selectInput("selectPlot", "Select Plot",
+                      choices = list("Visits per Day" = "visitsPerDay", 
+                                     "Reviews per Year (reg.)" = "reviewsPerYearReg",
+                                     "Reviews per Year (norm.)" = "reviewsPerYearNorm"
+                                ), 
+                      selected = 1
+          ),
+          
+          conditionalPanel(
+            condition = "input.selectPlot == 'visitsPerDay'",
+            selectInput(
+              "selectedDay",
+              "Select Day:",
+              c(
+                "Monday" = "Monday",
+                "Tuesday" = "Tuesday",
+                "Wednesday" = "Wednesday",
+                "Thursday" = "Thursday",
+                "Friday" = "Friday",
+                "Saturday" = "Saturday",
+                "Sunday" = "Sunday"
+              )
+            ),
+            plotOutput("visitsPerDay", height = 250, width = 300)
+          ),
+          
+          conditionalPanel(
+            condition = "input.selectPlot == 'reviewsPerYearReg'",
+            plotOutput("reviewsPerYearRegular", height = 250, width = 300)
+          ),
+          
+          conditionalPanel(
+            condition = "input.selectPlot == 'reviewsPerYearNorm'",
+            plotOutput("reviewsPerYearNormalized", height = 250, width = 300)
+          )
+          
+        )
+        
       ),
       
       tags$div(
@@ -58,49 +118,15 @@ navbarPage(
   ),
   
   tabPanel(
-    "Data explorer",
-    titlePanel(textOutput("restaurantName")),
+    "Inspect Dataset",
     navlistPanel(widths = c(2, 6),
-      "Header A",
-      tabPanel("Check-ins per Day",
-               fluidRow(column(
-                 4,
-                 selectInput(
-                   "selectedDay",
-                   "Select Day:",
-                   c(
-                     "Monday" = "Monday",
-                     "Tuesday" = "Tuesday",
-                     "Wednesday" = "Wednesday",
-                     "Thursday" = "Thursday",
-                     "Friday" = "Friday",
-                     "Saturday" = "Saturday",
-                     "Sunday" = "Sunday"
-                   )
-                 ),
-                 plotOutput("visitsPerDay", height = 500, width = 500)
-               ))),
-      tabPanel("Component 2"),
-      "Header B",
-      tabPanel("Reviews per Year",
-               fluidRow(column(
-                 4,
-                 radioButtons("reviewsPerYearRadio", h3("Select the plot"),
-                              choices = list("Count of reviews" = 1, "Normalized" = 2), selected = 1),
-                 
-                 conditionalPanel(
-                   condition = "input.reviewsPerYearRadio == 1",
-                   plotOutput("reviewsPerYearRegular", height = 500, width = 500)
-                 ),
-                 
-                 conditionalPanel(
-                   condition = "input.reviewsPerYearRadio == 2",
-                   plotOutput("reviewsPerYearNormalized", height = 500, width = 500)
-                 )
-               ))),
-      tabPanel("Component 4"),
-      "-----",
-      tabPanel("Component 5")
+      "Available Plots",
+      tabPanel("Stars vs Number of Reviews",
+                  plotOutput("scatterStarsReviewCount", height = 500, width = 500)
+              ),
+      tabPanel("Avg. Ratings per State",
+                  plotOutput("avgRatingsByState", height = 500, width = 900)
+               )
     )
   )
 )
