@@ -5,12 +5,10 @@
 #
 library(jsonlite)
 library(UsingR)
-library(leaflet)
-library(maps)
+library(reshape2)
 #
 # Read the businesses json file
 business_file<-"data/business.json"
-#biz_dat<-fromJSON(sprintf("[%s]", paste(readLines(business_file), collapse=",")))
 biz_dat<-stream_in(file(business_file))
 
 checkins_file<-"data/checkin.json"
@@ -19,7 +17,6 @@ checkins<-stream_in(file(checkins_file))
 # we want Restaurants
 restaurants<-grep(pattern="",biz_dat$categories)
 biz_rest<-biz_dat[restaurants,]
-
 
 bizrates<-data.frame(biz_rest$business_id, 
                      biz_rest$state, 
@@ -42,14 +39,66 @@ bizrates<-data.frame(biz_rest$business_id,
                      )
 
 checkins_flat <- flatten(checkins)
-
 checkins_flat$num_checkins <- rowSums(checkins_flat[,2:169], na.rm = TRUE)
 
-checkins_flat<-checkins_flat[, c(1,170)]
-
 # perform the join, eliminating not matched rows from Right
-bizrates <- merge(bizrates, checkins_flat, by.x= "biz_rest.business_id", by.y = "business_id")
+bizrates <- merge(bizrates, checkins_flat[, c(1,170)], by.x= "biz_rest.business_id", by.y = "business_id")
 
 cc<-complete.cases(bizrates)
 bizrates<-bizrates[cc,]
 write.table(bizrates,"data/bizrates.dat")
+
+checkins_flat <- merge(bizrates[, 1, drop=FALSE], checkins_flat[, -170], by.x= "biz_rest.business_id", by.y = "business_id")
+write.table(checkins_flat,"data/checkins.dat")
+
+
+##### Processing reviews.json #####
+###################################
+
+review_file<-"data/splitReviewA.json"
+review_dat<-stream_in(file(review_file))
+reviewDf<-data.frame(review_dat$business_id, review_dat$stars, review_dat$date)
+
+newColNames <- c("Year", "Month", "Day")
+newCols <- colsplit(review_dat$date, "-", newColNames)
+reviewDf <- cbind(reviewDf[, 1:2], newCols[,1]) #take only Year
+
+reviewDf <- merge(bizrates[, 1, drop=FALSE], reviewDf, by.x= "biz_rest.business_id", by.y = "review_dat.business_id")
+
+cc<-complete.cases(reviewDf)
+reviewDfFinal<-reviewDf[cc,]
+
+## Review file B ##
+review_file<-"data/splitReviewB.json"
+review_dat<-stream_in(file(review_file))
+reviewDf<-data.frame(review_dat$business_id, review_dat$stars, review_dat$date)
+
+newColNames <- c("Year", "Month", "Day")
+newCols <- colsplit(review_dat$date, "-", newColNames)
+reviewDf <- cbind(reviewDf[, 1:2], newCols[,1]) #take only Year
+
+reviewDf <- merge(bizrates[, 1, drop=FALSE], reviewDf, by.x= "biz_rest.business_id", by.y = "review_dat.business_id")
+
+cc<-complete.cases(reviewDf)
+reviewDfFinal <- rbind(reviewDfFinal, reviewDf[cc,])
+
+## Review file C ##
+review_file<-"data/splitReviewC.json"
+review_dat<-stream_in(file(review_file))
+reviewDf<-data.frame(review_dat$business_id, review_dat$stars, review_dat$date)
+
+newColNames <- c("Year", "Month", "Day")
+newCols <- colsplit(review_dat$date, "-", newColNames)
+reviewDf <- cbind(reviewDf[, 1:2], newCols[,1]) #take only Year
+
+reviewDf <- merge(bizrates[, 1, drop=FALSE], reviewDf, by.x= "biz_rest.business_id", by.y = "review_dat.business_id")
+
+cc<-complete.cases(reviewDf)
+reviewDfFinal <- rbind(reviewDfFinal, reviewDf[cc,])
+
+write.table(reviewDfFinal,"data/reviewtest.dat")
+
+
+
+
+

@@ -24,9 +24,9 @@ bizrates <-
 # checkins <- read.table("data/checkins.dat", stringsAsFactors = FALSE)
 
 reviewsTable <-
-  read.table("data/reviewDev.dat", stringsAsFactors = FALSE)
+  read.table("data/review.dat", stringsAsFactors = FALSE)
 checkins <-
-  read.table("data/checkinsDev.dat",
+  read.table("data/checkins.dat",
              stringsAsFactors = FALSE,
              header = TRUE)
 
@@ -241,7 +241,7 @@ function(input, output, session) {
       restaurantName
     })
     
-    restaurantBusinessId <- "7KPBkxAOEtb3QeIL9PEErg"
+    #restaurantBusinessId <- "7KPBkxAOEtb3QeIL9PEErg"
     print("Using dev business_id:")
     print(restaurantBusinessId)
     
